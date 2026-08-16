@@ -1,1 +1,10 @@
 /bin/
+
+# O jchessai.jar é ARTEFATO DE OUTRO PROJETO. Não é versionado aqui de propósito: uma cópia
+# commitada envelheceria em silêncio, e "o motor está desatualizado" é o tipo de defeito que
+# só aparece no meio de uma partida. Copie do JChessAI (ver README.md).
+/lib/*.jar
+
+# Os pesos têm 65 MB e são gerados pelo treino.
+/weights/
+*.pt
