@@ -12,3 +12,7 @@
 # Saída do empacotador. O pacote é gerado, não versionado.
 /build/
 /dist/
+
+# Pacotes compactados para levar a outra máquina: gerados do dist/, envelhecem igual.
+*.7z
+*.zip
