@@ -89,19 +89,32 @@ O caminho pode ser só o nome (procurado na pasta do pacote) ou absoluto —
 `"/home/felipe/git/AlphaZero/checkpoints/iter_0120.pt"` funciona, e é como se testa uma
 iteração nova sem copiar 65 MB. Nada a recompilar.
 
-| Campo | Padrão | O que é |
-|---|---|---|
-| `pesos` | `iter_0080.pt` | **a iteração da rede** — o motivo de o arquivo existir |
-| `motor` | `jchessai.jar` | o JAR do motor |
-| `sims` | `200` | simulações por lance: a força |
-| `ambiente` | `auto` | `auto`, `windows`, `ubuntu` ou `generico` |
-| `intervaloMs` | `1000` | de quanto em quanto tempo lê a tela |
-| `latenciaMs` | `2000` | teto do movimento do mouse |
-| `autoJogo` | `true` | `false` = só lê, não clica |
+### Os defaults da janela
 
-Só `pesos` importa; o resto é para a janela abrir do jeito que se quer. Sem o arquivo, o
-programa roda com os padrões. É JSON estrito — sem comentários e sem vírgula sobrando; errando,
-a mensagem diz a **linha e a coluna**.
+Os demais campos são **os valores com que a janela abre** — todos ajustáveis depois, nela
+mesma. O JSON só decide como ela começa.
+
+| Campo | Padrão | O que é | Faixa |
+|---|---|---|---|
+| `pesos` | `iter_0080.pt` | **a iteração da rede** — o motivo de o arquivo existir | — |
+| `motor` | `jchessai.jar` | o JAR do motor | — |
+| `sims` | `200` | **nível**: simulações por lance, a força | os 10 níveis |
+| `intervaloMs` | `1000` | **intervalo** de leitura da tela | 200 a 10000 |
+| `latenciaMs` | `2000` | **delay**: teto do movimento do mouse | 0 a 60000 |
+| `ambiente` | `auto` | `auto`, `windows`, `ubuntu` ou `generico` | — |
+| `autoJogo` | `true` | `false` = só lê, não clica | — |
+
+Nada aqui recusa o arquivo: nível fora da lista vira o mais próximo (`320` → `400`, empate
+desce), e valor fora da faixa é limitado a ela. Sem o arquivo, o programa roda com os padrões.
+É JSON estrito — sem comentários e sem vírgula sobrando; errando, a mensagem diz a **linha e a
+coluna**.
+
+Ao abrir, ele imprime o que aplicou:
+
+```
+[JChessCheater] aplicado : nível 800 simulações · intervalo 1500 ms · latência 3500 ms
+                           · ambiente Ubuntu · auto-jogo desligado
+```
 
 Os pesos entram no pacote **se houver um por perto** na hora de empacotar. São 65 MB: quem
 prefere manter as iterações num lugar só aponta o caminho absoluto no JSON.
@@ -129,7 +142,7 @@ No Eclipse, o `.classpath` já inclui `lib/jchessai.jar` — basta ter o arquivo
 java -cp bin:lib/jchessai.jar chesscheater.teste.TesteDeFumaca
 ```
 
-Roda sem navegador e sem monitor — **41 verificações**. Confere os moldes, a geometria do
+Roda sem navegador e sem monitor — **56 verificações**. Confere os moldes, a geometria do
 tabuleiro, a **cadeia de visão inteira** (pinta uma posição e lê de volta, nas duas
 orientações), as regras, o árbitro da partida e **o motor de verdade** — sobe o JAR, pede lance
 com e sem histórico e verifica que o protocolo não dessincroniza. É o primeiro comando a rodar

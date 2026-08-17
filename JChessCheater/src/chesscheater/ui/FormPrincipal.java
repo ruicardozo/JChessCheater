@@ -53,11 +53,6 @@ import chesscheater.visao.Visao;
  */
 public final class FormPrincipal
 {
-    /** As opções de força: simulações do MCTS por lance. */
-    private static final Integer[] OPCOES_DE_SIMS =
-        { 10, 50, 100, 200, 400, 600, 800, 1000, 1200, 1400 };
-    private static final int SIMS_PADRAO = 200;
-
     /** Piso absoluto do movimento do mouse: abaixo disso o clique não parece humano. */
     private static final int LATENCIA_MINIMA_MS = 200;
 
@@ -131,15 +126,15 @@ public final class FormPrincipal
         comboAmbiente.setToolTipText("Como o chess.com desenha o tabuleiro neste sistema. "
             + "O detectado já vem selecionado.");
 
-        spinnerIntervalo = new JSpinner(new SpinnerNumberModel(
-            limita(config.intervaloMs(), 200, 10000), 200, 10000, 100));
-        spinnerLatencia = new JSpinner(new SpinnerNumberModel(
-            limita(config.latenciaMs(), 0, 60000), 0, 60000, 100));
+        spinnerIntervalo = new JSpinner(
+            new SpinnerNumberModel(config.intervaloMs(), 200, 10000, 100));
+        spinnerLatencia = new JSpinner(
+            new SpinnerNumberModel(config.latenciaMs(), 0, 60000, 100));
         spinnerLatencia.setToolTipText("Teto do tempo gasto movendo o mouse até a casa "
             + "(simula tempo de reação). Não é tempo de pensar.");
 
-        comboSims = new JComboBox<>(OPCOES_DE_SIMS);
-        comboSims.setSelectedItem(maisProximoDe(config.sims()));
+        comboSims = new JComboBox<>(niveis());
+        comboSims.setSelectedItem(Integer.valueOf(config.sims()));
         comboSims.setToolTipText("Simulações do MCTS por lance: é a força da rede. "
             + "200 ≈ 1,2 s por lance; 1400 é bem mais forte e bem mais lento.");
 
@@ -198,8 +193,13 @@ public final class FormPrincipal
     {
         janela.setVisible(true);
         informa("Pronto — " + config.resumo());
-        System.out.println("[JChessCheater] motor: " + motor.jar());
-        System.out.println("[JChessCheater] pesos: " + motor.pesos());
+        System.out.println("[JChessCheater] motor    : " + motor.jar());
+        System.out.println("[JChessCheater] pesos    : " + motor.pesos());
+        System.out.println("[JChessCheater] aplicado : nível " + comboSims.getSelectedItem()
+            + " simulações · intervalo " + spinnerIntervalo.getValue() + " ms"
+            + " · latência " + spinnerLatencia.getValue() + " ms"
+            + " · ambiente " + comboAmbiente.getSelectedItem()
+            + " · auto-jogo " + (checkAutoJogo.isSelected() ? "ligado" : "desligado"));
     }
 
     /** O perfil pedido no JSON ("auto", "windows", "ubuntu", "generico"). */
@@ -215,29 +215,13 @@ public final class FormPrincipal
         return PerfilDeTela.detectado();
     }
 
-    /**
-     * A opção de simulações mais próxima do valor pedido. O combo tem uma lista fechada, e um
-     * JSON com "sims": 300 tem que abrir em algum lugar sensato em vez de ser ignorado.
-     */
-    private static Integer maisProximoDe(int pedido)
+    /** Os níveis do combo, na ordem em que a Configuracao os declara. */
+    private static Integer[] niveis()
     {
-        Integer melhor = SIMS_PADRAO;
-        int menorDistancia = Integer.MAX_VALUE;
-        for (Integer opcao : OPCOES_DE_SIMS)
-        {
-            int distancia = Math.abs(opcao - pedido);
-            if (distancia < menorDistancia)
-            {
-                menorDistancia = distancia;
-                melhor = opcao;
-            }
-        }
-        return melhor;
-    }
-
-    private static int limita(int v, int min, int max)
-    {
-        return v < min ? min : (v > max ? max : v);
+        Integer[] saida = new Integer[Configuracao.NIVEIS.length];
+        for (int i = 0; i < saida.length; i++)
+            saida[i] = Configuracao.NIVEIS[i];
+        return saida;
     }
 
     // =========================================================================
@@ -801,7 +785,7 @@ public final class FormPrincipal
     private int sims()
     {
         Object v = comboSims.getSelectedItem();
-        return v instanceof Integer ? (Integer) v : SIMS_PADRAO;
+        return v instanceof Integer ? (Integer) v : Configuracao.SIMS_PADRAO;
     }
 
     private void limpaPendencia()

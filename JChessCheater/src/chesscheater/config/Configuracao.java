@@ -114,8 +114,10 @@ public final class Configuracao
     /**
      * A pasta onde o JAR está — a âncora do pacote.
      *
-     * <p>Quando se roda de dentro do Eclipse ou com {@code -cp bin}, não há JAR; aí cai no
-     * diretório atual, que é o comportamento útil em desenvolvimento.
+     * <p>Rodando de <b>classes soltas</b> ({@code -cp bin}, Eclipse), devolve o <b>diretório
+     * atual</b>, e não a pasta das classes: em desenvolvimento os arquivos estão na raiz do
+     * projeto ({@code lib/}, {@code weights/}), não dentro de {@code bin/}. Ancorar em
+     * {@code bin/} faria o programa procurar {@code bin/lib/jchessai.jar} e não achar nada.
      */
     public static Path pastaDoJar()
     {
@@ -124,9 +126,12 @@ public final class Configuracao
             URI uri = Configuracao.class.getProtectionDomain()
                                         .getCodeSource().getLocation().toURI();
             Path local = Paths.get(uri);
-            Path pasta = Files.isDirectory(local) ? local : local.getParent();
-            if (pasta != null)
-                return pasta.toAbsolutePath().normalize();
+            if (!Files.isDirectory(local))          // é um JAR: a âncora é a pasta dele
+            {
+                Path pasta = local.getParent();
+                if (pasta != null)
+                    return pasta.toAbsolutePath().normalize();
+            }
         }
         catch (Exception semCodeSource)
         {
@@ -190,14 +195,64 @@ public final class Configuracao
         return pedido;
     }
 
-    /** Simulações por lance com que a janela abre. */
-    public int sims() { return inteiro("sims", 200); }
+    /**
+     * Os níveis de força oferecidos: simulações do MCTS por lance.
+     *
+     * <p>Moram aqui, e não na janela, porque são contrato do JSON: quem edita o arquivo
+     * precisa saber quais valores existem, e a lista do combo é consequência disso — não o
+     * contrário.
+     */
+    public static final int[] NIVEIS = { 10, 50, 100, 200, 400, 600, 800, 1000, 1200, 1400 };
 
-    public int intervaloMs() { return inteiro("intervaloMs", 1000); }
+    public static final int SIMS_PADRAO = 200;
+    public static final int INTERVALO_PADRAO_MS = 1000;
+    public static final int LATENCIA_PADRAO_MS = 2000;
 
-    public int latenciaMs() { return inteiro("latenciaMs", 2000); }
+    /**
+     * Simulações por lance com que a janela abre — <b>sempre um nível válido</b>.
+     *
+     * <p>Um JSON com {@code "sims": 320} não é ignorado nem quebra nada: vira o nível mais
+     * próximo (400). Devolver um valor fora da lista faria o combo abrir vazio, e um combo
+     * vazio é pior que um arredondamento. <b>Empate desce</b> — 300 fica em 200 —, porque
+     * errar para o lado mais rápido é o erro barato.
+     */
+    public int sims()
+    {
+        int pedido = inteiro("sims", SIMS_PADRAO);
+        int melhor = SIMS_PADRAO, menorDistancia = Integer.MAX_VALUE;
+        for (int nivel : NIVEIS)
+        {
+            int distancia = Math.abs(nivel - pedido);
+            if (distancia < menorDistancia)
+            {
+                menorDistancia = distancia;
+                melhor = nivel;
+            }
+        }
+        return melhor;
+    }
+
+    /** De quanto em quanto tempo a tela é lida, em ms. */
+    public int intervaloMs()
+    {
+        return limita(inteiro("intervaloMs", INTERVALO_PADRAO_MS), 200, 10_000);
+    }
+
+    /**
+     * Teto do tempo gasto <b>movendo o mouse</b> até a casa, em ms — o "delay" que faz o
+     * clique parecer humano. Não tem nada a ver com tempo de pensar, que é o nível.
+     */
+    public int latenciaMs()
+    {
+        return limita(inteiro("latenciaMs", LATENCIA_PADRAO_MS), 0, 60_000);
+    }
 
     public boolean autoJogo() { return booleano("autoJogo", true); }
+
+    private static int limita(int v, int min, int max)
+    {
+        return v < min ? min : (v > max ? max : v);
+    }
 
     /** Perfil de tela pedido: "auto", "windows", "ubuntu" ou "generico". */
     public String ambiente() { return texto("ambiente", "auto"); }

@@ -1,6 +1,10 @@
 package chesscheater.teste;
 
 import java.awt.image.BufferedImage;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import chesscheater.config.Configuracao;
 import chesscheater.motor.MotorUci;
 import chesscheater.partida.Partida;
@@ -49,6 +53,7 @@ public final class TesteDeFumaca
         leituraDePecas();
         regras();
         arbitro();
+        configuracao();
         motor();
 
         System.out.printf("%n%d passaram, %d falharam%n", passou, falhou);
@@ -240,6 +245,99 @@ public final class TesteDeFumaca
                 resgate.reconstroiDe("8/8/4k3/8/8/4K3/8/7R", true), "");
         confere("reconstruída fica SEM histórico", !resgate.temHistorico(), "");
         confere("final de baixo material detectado", resgate.finalDeBaixoMaterial(), "");
+    }
+
+    /**
+     * O JSON mestre: escreve um arquivo, lê de volta e confere campo a campo.
+     *
+     * <p>É o que prova que editar o arquivo muda mesmo a janela — a ligação que dá vontade de
+     * presumir e que ninguém percebe estar quebrada até abrir o programa e ver o padrão de
+     * fábrica no lugar do que se pediu.
+     */
+    private static void configuracao() throws Exception
+    {
+        System.out.println("\n── JSON mestre ──");
+        Path pasta = Files.createTempDirectory("jchesscheater-teste");
+        try
+        {
+            Path json = pasta.resolve(Configuracao.NOME_PADRAO);
+            Files.writeString(json, """
+                {
+                  "pesos": "iter_0120.pt",
+                  "sims": 800,
+                  "ambiente": "ubuntu",
+                  "intervaloMs": 1500,
+                  "latenciaMs": 3500,
+                  "autoJogo": false
+                }
+                """, StandardCharsets.UTF_8);
+
+            System.setProperty("jchesscheater.config", json.toString());
+            Configuracao c = Configuracao.carrega();
+
+            confere("achou o arquivo", json.equals(c.arquivo()), String.valueOf(c.arquivo()));
+            confere("pesos: lê o nome pedido",
+                    c.pesos().getFileName().toString().equals("iter_0120.pt"),
+                    c.pesos().toString());
+            confere("pesos: resolve na pasta do JSON",
+                    c.pesos().getParent().equals(pasta), c.pesos().toString());
+            confere("nível: 800", c.sims() == 800, String.valueOf(c.sims()));
+            confere("intervalo: 1500 ms", c.intervaloMs() == 1500, String.valueOf(c.intervaloMs()));
+            confere("latência: 3500 ms", c.latenciaMs() == 3500, String.valueOf(c.latenciaMs()));
+            confere("auto-jogo: desligado", !c.autoJogo(), "");
+            confere("ambiente: ubuntu", "ubuntu".equals(c.ambiente()), c.ambiente());
+
+            // Caminho absoluto: é assim que se aponta uma iteração sem copiar 65 MB.
+            Files.writeString(json,
+                "{ \"pesos\": \"/tmp/qualquer/iter_0150.pt\" }", StandardCharsets.UTF_8);
+            c = Configuracao.carrega();
+            confere("pesos: caminho absoluto passa intacto",
+                    c.pesos().toString().equals("/tmp/qualquer/iter_0150.pt")
+                    || c.pesos().toString().endsWith("iter_0150.pt"), c.pesos().toString());
+            confere("campo ausente cai no padrão",
+                    c.sims() == Configuracao.SIMS_PADRAO
+                    && c.intervaloMs() == Configuracao.INTERVALO_PADRAO_MS
+                    && c.latenciaMs() == Configuracao.LATENCIA_PADRAO_MS
+                    && c.autoJogo(),
+                    c.sims() + "/" + c.intervaloMs() + "/" + c.latenciaMs());
+
+            // Valores fora da lista e fora da faixa: o programa tem que abrir mesmo assim.
+            Files.writeString(json,
+                "{ \"sims\": 320, \"intervaloMs\": 50, \"latenciaMs\": 999999 }",
+                StandardCharsets.UTF_8);
+            c = Configuracao.carrega();
+            confere("nível fora da lista vira o mais próximo (320 → 400)",
+                    c.sims() == 400, String.valueOf(c.sims()));
+
+            Files.writeString(json, "{ \"sims\": 300 }", StandardCharsets.UTF_8);
+            confere("empate desce (300 → 200)",
+                    Configuracao.carrega().sims() == 200,
+                    String.valueOf(Configuracao.carrega().sims()));
+
+            Files.writeString(json,
+                "{ \"intervaloMs\": 50, \"latenciaMs\": 999999 }", StandardCharsets.UTF_8);
+            c = Configuracao.carrega();
+            confere("intervalo abaixo do mínimo é limitado (50 → 200)",
+                    c.intervaloMs() == 200, String.valueOf(c.intervaloMs()));
+            confere("latência acima do máximo é limitada (999999 → 60000)",
+                    c.latenciaMs() == 60_000, String.valueOf(c.latenciaMs()));
+
+            // Sem arquivo nenhum: os padrões, e não uma explosão.
+            System.clearProperty("jchesscheater.config");
+            Files.delete(json);
+            c = Configuracao.carrega();
+            confere("sem JSON, roda nos padrões",
+                    c.sims() == Configuracao.SIMS_PADRAO && c.autoJogo(), "");
+        }
+        finally
+        {
+            System.clearProperty("jchesscheater.config");
+            try (var caminhos = Files.walk(pasta))
+            {
+                caminhos.sorted(java.util.Comparator.reverseOrder())
+                        .forEach(p -> p.toFile().delete());
+            }
+        }
     }
 
     private static void motor() throws Exception

@@ -20,7 +20,7 @@ Antes de soltar o robô numa máquina nova, rode o diagnóstico:
 
     java -cp jchesscheater.jar chesscheater.teste.TesteDeFumaca
 
-São 41 verificações e leva uns 5 segundos. Se der 41/41, a instalação está boa — inclusive o
+São 56 verificações e leva uns 5 segundos. Se der 56/56, a instalação está boa — inclusive o
 motor, que ele sobe de verdade e consulta.
 
 
@@ -44,18 +44,28 @@ O caminho pode ser só o nome (procurado NESTA pasta) ou um caminho completo, po
 Assim dá para manter as iterações num lugar só e apontar para elas, sem copiar 65 MB por vez.
 
 
-OS OUTROS CAMPOS
-----------------
+OS DEFAULTS DA JANELA
+---------------------
 
-Todos opcionais — servem para a janela já abrir do jeito que você quer.
+Os outros campos são os valores com que a janela ABRE. Todos opcionais, todos ajustáveis
+depois, na própria janela — o JSON só decide como ela começa.
 
-    "sims"          simulações do MCTS por lance: é a FORÇA da rede.
+    "sims"          NÍVEL: simulações do MCTS por lance, a FORÇA da rede.
                     10, 50, 100, 200, 400, 600, 800, 1000, 1200 ou 1400.
                     200 ≈ 1,2 s por lance; 1400 é bem mais forte e bem mais lento.
+                    Valor fora da lista vira o mais próximo (320 -> 400).
+    "intervaloMs"   INTERVALO de leitura da tela. 200 a 10000.
+    "latenciaMs"    DELAY: teto do tempo gasto MOVENDO O MOUSE até a casa. 0 a 60000.
+                    Não é tempo de pensar — quem manda no tempo de pensar é o nível.
     "ambiente"      "auto" (detecta o sistema), "windows", "ubuntu" ou "generico"
-    "intervaloMs"   de quanto em quanto tempo a tela é lida
-    "latenciaMs"    teto do tempo gasto MOVENDO O MOUSE até a casa (não é tempo de pensar)
     "autoJogo"      false = só lê e mostra a posição, sem clicar
+
+Valor fora da faixa é limitado à faixa, não recusado: o programa abre de qualquer jeito.
+
+Ao abrir, ele imprime no console o que aplicou:
+
+    [JChessCheater] aplicado : nível 800 simulações · intervalo 1500 ms · latência 3500 ms
+                               · ambiente Ubuntu · auto-jogo desligado
 
 É JSON de verdade: sem vírgula sobrando no fim e sem comentários. Se errar, o programa diz a
 linha e a coluna.
