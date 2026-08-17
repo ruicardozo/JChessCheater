@@ -1,6 +1,7 @@
 package chesscheater.teste;
 
 import java.awt.image.BufferedImage;
+import chesscheater.config.Configuracao;
 import chesscheater.motor.MotorUci;
 import chesscheater.partida.Partida;
 import chesscheater.visao.ConjuntoDeTemplates;
@@ -244,7 +245,22 @@ public final class TesteDeFumaca
     private static void motor() throws Exception
     {
         System.out.println("\n── motor (jchessai.jar por UCI) ──");
-        MotorUci motor = MotorUci.padrao();
+        Configuracao config;
+        try
+        {
+            config = Configuracao.carrega();
+        }
+        catch (Exception jsonRuim)
+        {
+            // Um JSON com vírgula sobrando é o erro mais provável de todos — quem edita o
+            // arquivo à mão merece a linha e a coluna, não um stack trace.
+            confere("o " + Configuracao.NOME_PADRAO + " é válido", false,
+                    jsonRuim.getMessage());
+            return;
+        }
+        System.out.println("   config: " + (config.arquivo() == null
+            ? "nenhum (padrões)" : config.arquivo().toString()));
+        MotorUci motor = MotorUci.de(config);
         System.out.println("   jar   : " + motor.jar());
         System.out.println("   pesos : " + motor.pesos());
 

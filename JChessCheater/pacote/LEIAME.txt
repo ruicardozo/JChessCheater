@@ -1,0 +1,99 @@
+JChessCheater — a rede v16a jogando contra os bots do chess.com
+================================================================
+
+Esta pasta é o pacote inteiro. Nada mais precisa ser instalado além do Java 21.
+
+    jchesscheater.jar    o programa
+    jchessai.jar         o motor (rede + MCTS) e as regras de xadrez
+    jchesscheater.json   O ARQUIVO QUE VOCÊ EDITA
+    iter_0080.pt         os pesos (pode não estar aqui; ver abaixo)
+
+
+COMO RODAR
+----------
+
+    java -jar jchesscheater.jar
+
+Precisa ser um Java 21 ou mais novo. Para conferir:  java -version
+
+Antes de soltar o robô numa máquina nova, rode o diagnóstico:
+
+    java -cp jchesscheater.jar chesscheater.teste.TesteDeFumaca
+
+São 41 verificações e leva uns 5 segundos. Se der 41/41, a instalação está boa — inclusive o
+motor, que ele sobe de verdade e consulta.
+
+
+TROCAR A ITERAÇÃO DA REDE
+-------------------------
+
+É só isto: abra o jchesscheater.json e mude a linha "pesos".
+
+    {
+      "pesos": "iter_0100.pt",     <-- o arquivo que você quer usar
+      ...
+    }
+
+Feche e reabra o programa. Não há nada a recompilar.
+
+O caminho pode ser só o nome (procurado NESTA pasta) ou um caminho completo, por exemplo:
+
+    "pesos": "D:/Downloads/temp/iter_0100.pt"
+    "pesos": "/home/felipe/git/AlphaZero/checkpoints/iter_0100.pt"
+
+Assim dá para manter as iterações num lugar só e apontar para elas, sem copiar 65 MB por vez.
+
+
+OS OUTROS CAMPOS
+----------------
+
+Todos opcionais — servem para a janela já abrir do jeito que você quer.
+
+    "sims"          simulações do MCTS por lance: é a FORÇA da rede.
+                    10, 50, 100, 200, 400, 600, 800, 1000, 1200 ou 1400.
+                    200 ≈ 1,2 s por lance; 1400 é bem mais forte e bem mais lento.
+    "ambiente"      "auto" (detecta o sistema), "windows", "ubuntu" ou "generico"
+    "intervaloMs"   de quanto em quanto tempo a tela é lida
+    "latenciaMs"    teto do tempo gasto MOVENDO O MOUSE até a casa (não é tempo de pensar)
+    "autoJogo"      false = só lê e mostra a posição, sem clicar
+
+É JSON de verdade: sem vírgula sobrando no fim e sem comentários. Se errar, o programa diz a
+linha e a coluna.
+
+
+A JANELA
+--------
+
+Monitor              em qual tela está o navegador (precisa ser 1920x1080)
+Ambiente             o perfil de captura; já vem no detectado
+Intervalo            de quanto em quanto tempo lê a tela
+Latência             tempo de movimento do mouse
+Nível (simulações)   a força da rede — o mesmo "sims" do JSON, mudável em partida
+Jogar como           a cor; ajusta-se sozinha ao ver a posição inicial
+Auto-jogo            desmarcado, ele só lê e não clica
+
+Iniciar / Parar / Jogar / Fechar. O "Jogar" é o resgate: se o robô perder o fio depois de uma
+popup, escolha a cor certa e clique nele.
+
+NA PRIMEIRA VEZ, deixe o Auto-jogo DESMARCADO. Ele vai só imprimir a posição lida no console a
+cada varredura. Se as peças estiverem certas, marque e solte o robô.
+
+
+QUANDO DÁ ERRADO
+----------------
+
+"jchessai.jar não encontrado"   ele tem que estar NESTA pasta, ou ajuste "motor" no JSON
+"pesos não encontrados"         ajuste "pesos" no JSON
+UnsupportedClassVersionError    o java é antigo demais; precisa ser 21
+"Tabuleiro não encontrado"      navegador não maximizado, Ambiente errado, ou tela que não é
+                                Full HD
+"Posição não reconhecida"       o robô perdeu o fio: ajuste a cor e clique "Jogar"
+peças lidas erradas             o chess.com mudou o desenho — é caso de reprogramar o perfil
+                                de tela no código (visao/PerfilDeTela.java)
+
+
+PARA QUE SERVE
+--------------
+
+Para medir a nossa rede contra bots de rating conhecido. O nome é uma piada interna: não use
+em partidas valendo rating contra pessoas.

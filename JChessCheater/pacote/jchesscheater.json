@@ -1,0 +1,9 @@
+{
+  "pesos": "iter_0080.pt",
+  "motor": "jchessai.jar",
+  "sims": 200,
+  "ambiente": "auto",
+  "intervaloMs": 1000,
+  "latenciaMs": 2000,
+  "autoJogo": true
+}

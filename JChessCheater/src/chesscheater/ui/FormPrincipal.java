@@ -22,6 +22,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import chesscheater.config.Configuracao;
 import chesscheater.motor.MotorUci;
 import chesscheater.partida.Partida;
 import chesscheater.robo.Clicador;
@@ -57,8 +58,7 @@ public final class FormPrincipal
         { 10, 50, 100, 200, 400, 600, 800, 1000, 1200, 1400 };
     private static final int SIMS_PADRAO = 200;
 
-    private static final int INTERVALO_PADRAO_MS = 1000;
-    private static final int LATENCIA_PADRAO_MS = 2000;
+    /** Piso absoluto do movimento do mouse: abaixo disso o clique não parece humano. */
     private static final int LATENCIA_MINIMA_MS = 200;
 
     // ── Interface ────────────────────────────────────────────────────────────
@@ -75,7 +75,8 @@ public final class FormPrincipal
 
     // ── Máquina ──────────────────────────────────────────────────────────────
     private final Visao visao;
-    private final MotorUci motor = MotorUci.padrao();
+    private final Configuracao config;
+    private final MotorUci motor;
     private final Partida partida = new Partida();
     private Clicador clicador;
     private Robot robot;
@@ -98,9 +99,11 @@ public final class FormPrincipal
     private String pendenteAntes = null;
     private long pendenteDesde = 0L;
 
-    public FormPrincipal(Visao visao)
+    public FormPrincipal(Visao visao, Configuracao config)
     {
         this.visao = visao;
+        this.config = config;
+        this.motor = MotorUci.de(config);
 
         janela = new JFrame("JChessCheater — rede v16a contra os bots do chess.com");
         janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -124,24 +127,24 @@ public final class FormPrincipal
         comboMonitor = new JComboBox<>(nomes);
 
         comboAmbiente = new JComboBox<>(PerfilDeTela.TODOS);
-        comboAmbiente.setSelectedItem(PerfilDeTela.detectado());
+        comboAmbiente.setSelectedItem(perfilPedido(config.ambiente()));
         comboAmbiente.setToolTipText("Como o chess.com desenha o tabuleiro neste sistema. "
             + "O detectado já vem selecionado.");
 
-        spinnerIntervalo = new JSpinner(
-            new SpinnerNumberModel(INTERVALO_PADRAO_MS, 200, 10000, 100));
-        spinnerLatencia = new JSpinner(
-            new SpinnerNumberModel(LATENCIA_PADRAO_MS, 0, 60000, 100));
+        spinnerIntervalo = new JSpinner(new SpinnerNumberModel(
+            limita(config.intervaloMs(), 200, 10000), 200, 10000, 100));
+        spinnerLatencia = new JSpinner(new SpinnerNumberModel(
+            limita(config.latenciaMs(), 0, 60000), 0, 60000, 100));
         spinnerLatencia.setToolTipText("Teto do tempo gasto movendo o mouse até a casa "
             + "(simula tempo de reação). Não é tempo de pensar.");
 
         comboSims = new JComboBox<>(OPCOES_DE_SIMS);
-        comboSims.setSelectedItem(Integer.valueOf(SIMS_PADRAO));
+        comboSims.setSelectedItem(maisProximoDe(config.sims()));
         comboSims.setToolTipText("Simulações do MCTS por lance: é a força da rede. "
             + "200 ≈ 1,2 s por lance; 1400 é bem mais forte e bem mais lento.");
 
         comboCor = new JComboBox<>(new String[] { "Brancas", "Pretas" });
-        checkAutoJogo = new JCheckBox("Auto-jogar (robô)", true);
+        checkAutoJogo = new JCheckBox("Auto-jogar (robô)", config.autoJogo());
 
         JPanel topo = new JPanel(new GridLayout(0, 2, 6, 6));
         topo.add(new JLabel("Monitor:"));
@@ -194,7 +197,47 @@ public final class FormPrincipal
     public void mostra()
     {
         janela.setVisible(true);
-        informa("Pronto. Motor: " + motor.jar() + " | pesos: " + motor.pesos());
+        informa("Pronto — " + config.resumo());
+        System.out.println("[JChessCheater] motor: " + motor.jar());
+        System.out.println("[JChessCheater] pesos: " + motor.pesos());
+    }
+
+    /** O perfil pedido no JSON ("auto", "windows", "ubuntu", "generico"). */
+    private static PerfilDeTela perfilPedido(String nome)
+    {
+        String n = nome == null ? "auto" : nome.trim().toLowerCase();
+        if (n.startsWith("win"))
+            return PerfilDeTela.WINDOWS;
+        if (n.startsWith("ubu") || n.startsWith("lin"))
+            return PerfilDeTela.UBUNTU;
+        if (n.startsWith("gen"))
+            return PerfilDeTela.GENERICO;
+        return PerfilDeTela.detectado();
+    }
+
+    /**
+     * A opção de simulações mais próxima do valor pedido. O combo tem uma lista fechada, e um
+     * JSON com "sims": 300 tem que abrir em algum lugar sensato em vez de ser ignorado.
+     */
+    private static Integer maisProximoDe(int pedido)
+    {
+        Integer melhor = SIMS_PADRAO;
+        int menorDistancia = Integer.MAX_VALUE;
+        for (Integer opcao : OPCOES_DE_SIMS)
+        {
+            int distancia = Math.abs(opcao - pedido);
+            if (distancia < menorDistancia)
+            {
+                menorDistancia = distancia;
+                melhor = opcao;
+            }
+        }
+        return melhor;
+    }
+
+    private static int limita(int v, int min, int max)
+    {
+        return v < min ? min : (v > max ? max : v);
     }
 
     // =========================================================================

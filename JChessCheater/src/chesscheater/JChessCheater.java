@@ -6,6 +6,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import chesscheater.config.Configuracao;
 import chesscheater.ui.FormPrincipal;
 import chesscheater.visao.Visao;
 
@@ -56,6 +57,21 @@ public final class JChessCheater
             // segue com o Look-and-Feel padrão do Swing
         }
 
+        final Configuracao config;
+        try
+        {
+            config = Configuracao.carrega();
+        }
+        catch (Exception falha)
+        {
+            JOptionPane.showMessageDialog(null,
+                "O " + Configuracao.NOME_PADRAO + " não pôde ser lido:\n\n"
+                    + falha.getMessage(),
+                "JChessCheater", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+            return;
+        }
+
         final Visao visao;
         try
         {
@@ -70,6 +86,6 @@ public final class JChessCheater
             return;
         }
 
-        SwingUtilities.invokeLater(() -> new FormPrincipal(visao).mostra());
+        SwingUtilities.invokeLater(() -> new FormPrincipal(visao, config).mostra());
     }
 }

@@ -33,18 +33,82 @@ Nenhum dos dois é versionado. O JAR fica de fora **de propósito**: uma cópia 
 envelheceria em silêncio, e "o motor está desatualizado" é o tipo de defeito que só aparece no
 meio de uma partida.
 
-Se preferir não copiar, aponte os caminhos:
+Quem manda nos caminhos é o **JSON mestre** (§2). Em desenvolvimento, sem JSON nenhum, o
+programa ainda acha o JAR em `lib/` e os pesos em `weights/`, caindo depois para o repositório
+vizinho do JChessAI — é o que faz `run.sh` funcionar sem configurar nada. Para um override de
+emergência, sem editar arquivo:
 
 ```
 -Djchesscheater.jar=/caminho/jchessai.jar
 -Djchesscheater.pesos=/caminho/iter_0080.pt
+-Djchesscheater.config=/caminho/outro.json
 ```
-
-Sem isso, o programa procura em `lib/` e `weights/` e depois no repositório vizinho do JChessAI.
 
 ---
 
-## 2. Compilar e rodar
+## 2. O pacote
+
+```bash
+./empacotar.sh                    # ou: empacotar.bat  no Windows
+```
+
+Monta `dist/` — uma pasta que se copia inteira para qualquer máquina com Java 21:
+
+```
+dist/
+  jchesscheater.jar    o programa (Main-Class e Class-Path no manifesto)
+  jchessai.jar         o motor e as regras
+  jchesscheater.json   O ARQUIVO QUE SE EDITA
+  LEIAME.txt           o essencial, para quem abrir a pasta daqui a um ano
+  iter_0080.pt         os pesos — opcionais, ver abaixo
+```
+
+```bash
+cd dist
+java -jar jchesscheater.jar                                   # roda
+java -cp jchesscheater.jar chesscheater.teste.TesteDeFumaca   # diagnostica
+```
+
+**Funciona de qualquer diretório.** Os caminhos do JSON resolvem contra a pasta do JAR, não
+contra o diretório de onde se chamou — é isso que faz o pacote funcionar clicado, por atalho ou
+de outra pasta. O `Class-Path` do manifesto encontra o `jchessai.jar` ao lado sozinho.
+
+### Trocar de iteração
+
+É uma linha no `jchesscheater.json`, e reabrir:
+
+```json
+{
+  "pesos": "iter_0100.pt",
+  "sims": 200,
+  "ambiente": "auto"
+}
+```
+
+O caminho pode ser só o nome (procurado na pasta do pacote) ou absoluto —
+`"/home/felipe/git/AlphaZero/checkpoints/iter_0120.pt"` funciona, e é como se testa uma
+iteração nova sem copiar 65 MB. Nada a recompilar.
+
+| Campo | Padrão | O que é |
+|---|---|---|
+| `pesos` | `iter_0080.pt` | **a iteração da rede** — o motivo de o arquivo existir |
+| `motor` | `jchessai.jar` | o JAR do motor |
+| `sims` | `200` | simulações por lance: a força |
+| `ambiente` | `auto` | `auto`, `windows`, `ubuntu` ou `generico` |
+| `intervaloMs` | `1000` | de quanto em quanto tempo lê a tela |
+| `latenciaMs` | `2000` | teto do movimento do mouse |
+| `autoJogo` | `true` | `false` = só lê, não clica |
+
+Só `pesos` importa; o resto é para a janela abrir do jeito que se quer. Sem o arquivo, o
+programa roda com os padrões. É JSON estrito — sem comentários e sem vírgula sobrando; errando,
+a mensagem diz a **linha e a coluna**.
+
+Os pesos entram no pacote **se houver um por perto** na hora de empacotar. São 65 MB: quem
+prefere manter as iterações num lugar só aponta o caminho absoluto no JSON.
+
+---
+
+## 3. Compilar e rodar durante o desenvolvimento
 
 ```bash
 ./run.sh              # compila se preciso e abre a janela
@@ -77,7 +141,7 @@ chess.com — isso só a tela diz.
 
 ---
 
-## 3. A janela
+## 4. A janela
 
 | Campo | O que faz |
 |---|---|
@@ -106,7 +170,7 @@ mas cada lance demora proporcionalmente mais.
 
 ---
 
-## 4. O compartimento da imagem
+## 5. O compartimento da imagem
 
 Está tudo em **`src/chesscheater/visao/PerfilDeTela.java`**, e é o arquivo a abrir quando o
 chess.com mudar o desenho.
@@ -137,7 +201,7 @@ precisa ser entendido para mexer no resto.
 
 ---
 
-## 5. Mapa do código
+## 6. Mapa do código
 
 | Pacote | O que faz |
 |---|---|
@@ -163,7 +227,7 @@ quando não jogou.
 
 ---
 
-## 6. Quando algo dá errado
+## 7. Quando algo dá errado
 
 | Sintoma | Causa provável |
 |---|---|
@@ -178,7 +242,7 @@ quando não jogou.
 
 ---
 
-## 7. Para que serve, e para que não serve
+## 8. Para que serve, e para que não serve
 
 Serve para **testar a nossa rede contra bots**, que é o que o projeto AlphaZero precisa medir e
 o que o chess.com oferece para isso. O nome é uma piada interna.

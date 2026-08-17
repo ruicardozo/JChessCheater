@@ -8,3 +8,7 @@
 # Os pesos têm 65 MB e são gerados pelo treino.
 /weights/
 *.pt
+
+# Saída do empacotador. O pacote é gerado, não versionado.
+/build/
+/dist/

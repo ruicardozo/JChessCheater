@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import chesscheater.config.Configuracao;
+
 /**
  * A ponte com o <b>jchessai.jar</b> — a nossa rede v16a + MCTS, falando UCI.
  *
@@ -36,20 +38,6 @@ import java.util.List;
  */
 public final class MotorUci implements AutoCloseable
 {
-    /** Onde procurar o JAR, se não vier por propriedade de sistema. */
-    private static final String[] CAMINHOS_PADRAO_DO_JAR = {
-        "lib/jchessai.jar",
-        "../JChessAI/uci/build/libs/jchessai.jar",
-        "../../JChessAI/uci/build/libs/jchessai.jar",
-    };
-
-    /** Onde procurar os pesos, se não vierem por propriedade de sistema. */
-    private static final String[] CAMINHOS_PADRAO_DOS_PESOS = {
-        "weights/iter_0080.pt",
-        "../JChessAI/weights/iter_0080.pt",
-        "../../JChessAI/weights/iter_0080.pt",
-    };
-
     private final Path jar;
     private final Path pesos;
 
@@ -67,25 +55,10 @@ public final class MotorUci implements AutoCloseable
         this.pesos = pesos;
     }
 
-    /** Constrói com os caminhos descobertos (propriedade de sistema ou padrões). */
-    public static MotorUci padrao()
+    /** Constrói a partir do JSON mestre — quem decide os caminhos é ele. */
+    public static MotorUci de(Configuracao config)
     {
-        return new MotorUci(descobre("jchesscheater.jar", CAMINHOS_PADRAO_DO_JAR),
-                            descobre("jchesscheater.pesos", CAMINHOS_PADRAO_DOS_PESOS));
-    }
-
-    private static Path descobre(String propriedade, String[] candidatos)
-    {
-        String daPropriedade = System.getProperty(propriedade);
-        if (daPropriedade != null && !daPropriedade.isBlank())
-            return Paths.get(daPropriedade);
-        for (String c : candidatos)
-        {
-            Path p = Paths.get(c);
-            if (Files.isRegularFile(p))
-                return p.toAbsolutePath().normalize();
-        }
-        return Paths.get(candidatos[0]);          // devolve o padrão para a mensagem de erro
+        return new MotorUci(config.motor(), config.pesos());
     }
 
     public Path jar()   { return jar; }
@@ -105,10 +78,12 @@ public final class MotorUci implements AutoCloseable
 
         if (!Files.isRegularFile(jar))
             throw new IOException("jchessai.jar não encontrado em: " + jar.toAbsolutePath()
-                + "\nAponte com -Djchesscheater.jar=/caminho/jchessai.jar");
+                + "\nPonha-o ao lado do jchesscheater.jar, ou ajuste \"motor\" no "
+                + Configuracao.NOME_PADRAO + ".");
         if (!Files.isRegularFile(pesos))
             throw new IOException("pesos não encontrados em: " + pesos.toAbsolutePath()
-                + "\nAponte com -Djchesscheater.pesos=/caminho/iter_0080.pt");
+                + "\nAjuste \"pesos\" no " + Configuracao.NOME_PADRAO
+                + " para apontar a iteração que você quer usar.");
 
         // O mesmo java que roda este programa. O jchessai.jar é class file 65 (Java 21), e
         // este programa também usa as classes de xadrez de dentro dele — então se estamos
