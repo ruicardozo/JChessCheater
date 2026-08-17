@@ -188,11 +188,15 @@ O combo escolhe **simulações por lance**, que é o botão de força do MCTS:
 
 | Simulações | 10 | 200 | 800 | 1400 |
 |---|---|---|---|---|
-| Tempo por lance | ~0,15 s | ~1,2 s | ~5 s | ~9 s |
+| Tempo por lance | ~0,05 s | ~0,5 s | ~2 s | ~3,5 s |
 
-Números medidos numa máquina de 6 núcleos. **200** é o padrão e foi o valor usado no torneio de
-validação do JChessAI. Subir aumenta a força de verdade — a busca é o multiplicador da rede —,
-mas cada lance demora proporcionalmente mais.
+Números medidos numa máquina de 6 núcleos com o **núcleo vetorial** do motor (Fase 8 do
+JChessAI), que o `MotorUci` liga sozinho quando o Java da máquina suporta — ele sonda
+`--add-modules jdk.incubator.vector` antes de subir o motor, e cai no núcleo escalar
+(~1,4× mais lento) se não der. **As jogadas são as mesmas nos dois, bit a bit.** O console
+mostra qual ficou ativo na linha `rede ... — núcleo ...`. **200** é o padrão e foi o valor
+usado no torneio de validação do JChessAI. Subir aumenta a força de verdade — a busca é o
+multiplicador da rede —, mas cada lance demora proporcionalmente mais.
 
 ---
 

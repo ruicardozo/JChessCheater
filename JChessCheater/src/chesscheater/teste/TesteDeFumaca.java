@@ -400,6 +400,7 @@ public final class TesteDeFumaca
             motor.inicia();
             confere("o motor subiu e respondeu o aperto de mão UCI", motor.estaVivo(),
                     "processo morto");
+            System.out.println("   " + motor.descricaoDaRede());
             System.out.printf("   subiu em %.1f s%n", (System.currentTimeMillis() - t0) / 1000.0);
 
             motor.defineSims(10);                 // rápido: aqui só importa que responda

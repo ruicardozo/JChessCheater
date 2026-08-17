@@ -13,6 +13,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import chesscheater.config.Configuracao;
 
@@ -40,6 +41,12 @@ public final class MotorUci implements AutoCloseable
 {
     private final Path jar;
     private final Path pesos;
+
+    /** Resultado da sonda da Vector API — uma vez por processo. */
+    private static Boolean vectorApiOk;
+
+    /** A linha "info string rede ..." do motor, capturada na subida — diz o núcleo ativo. */
+    private volatile String descricaoDaRede = "";
 
     private Process processo;
     private BufferedWriter entrada;
@@ -93,8 +100,24 @@ public final class MotorUci implements AutoCloseable
         String java = Paths.get(System.getProperty("java.home"), "bin",
                                 windows ? "java.exe" : "java").toString();
 
-        ProcessBuilder pb = new ProcessBuilder(java, "-jar", jar.toString(),
-                                               "--weights", pesos.toString());
+        // O núcleo vetorial do motor (Fase 8 do JChessAI) precisa do módulo incubador na
+        // linha de comando — e as jogadas são as MESMAS, bit a bit, com ou sem ele; só o
+        // relógio muda (~272 → ~400 sims/s). Como um java sem o módulo se recusaria a subir,
+        // sondamos uma vez com "-version" antes de usar a flag; falhando, sobe sem ela e o
+        // motor cai no núcleo escalar sozinho.
+        List<String> cmd = new ArrayList<>();
+        cmd.add(java);
+        if (suportaVectorApi(java))
+        {
+            cmd.add("--add-modules");
+            cmd.add("jdk.incubator.vector");
+        }
+        cmd.add("-jar");
+        cmd.add(jar.toString());
+        cmd.add("--weights");
+        cmd.add(pesos.toString());
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(true);
         processo = pb.start();
         entrada = new BufferedWriter(new OutputStreamWriter(
@@ -136,6 +159,45 @@ public final class MotorUci implements AutoCloseable
         envia("isready");
         esperaPor("readyok", 180_000);             // a carga da rede leva ~100ms, mas o
                                                    // primeiro isready também compila a JVM
+        synchronized (trava)
+        {
+            for (String l : linhas)
+                if (l.startsWith("info string rede"))
+                {
+                    descricaoDaRede = l.substring("info string ".length());
+                    break;
+                }
+        }
+    }
+
+    /** O que o motor anunciou ao carregar a rede — inclui qual núcleo ficou ativo. */
+    public String descricaoDaRede()
+    {
+        return descricaoDaRede;
+    }
+
+    /**
+     * O java aceita {@code --add-modules jdk.incubator.vector}? Sondado com um
+     * {@code -version} descartável, porque um java sem o módulo se recusa a SUBIR com a
+     * flag — e é melhor perder a flag que perder o motor.
+     */
+    private static synchronized boolean suportaVectorApi(String java)
+    {
+        if (vectorApiOk != null)
+            return vectorApiOk;
+        try
+        {
+            Process sonda = new ProcessBuilder(java, "--add-modules",
+                "jdk.incubator.vector", "-version").redirectErrorStream(true).start();
+            sonda.getInputStream().readAllBytes();
+            vectorApiOk = sonda.waitFor(15, TimeUnit.SECONDS)
+                       && sonda.exitValue() == 0;
+        }
+        catch (Exception falhou)
+        {
+            vectorApiOk = false;
+        }
+        return vectorApiOk;
     }
 
     /** Ajusta o número de simulações por lance. Barato: só reenvia quando muda. */

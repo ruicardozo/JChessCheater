@@ -276,6 +276,7 @@ public final class FormPrincipal
             {
                 motor.inicia();
                 motor.defineSims(sims());
+                System.out.println("[JChessCheater] " + motor.descricaoDaRede());
                 informa("Escaneando...");
                 SwingUtilities.invokeLater(() -> {
                     temporizador = new Timer((Integer) spinnerIntervalo.getValue(),

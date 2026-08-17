@@ -63,7 +63,9 @@ depois, na própria janela — o JSON só decide como ela começa.
 
     "sims"          NÍVEL: simulações do MCTS por lance, a FORÇA da rede.
                     10, 50, 100, 200, 400, 600, 800, 1000, 1200 ou 1400.
-                    200 ≈ 1,2 s por lance; 1400 é bem mais forte e bem mais lento.
+                    200 ≈ 0,5 s por lance; 1400 é bem mais forte e bem mais lento.
+                    (O programa liga sozinho o núcleo vetorial do motor quando o Java
+                    da máquina suporta — as jogadas são as mesmas, só mais rápidas.)
                     Valor fora da lista vira o mais próximo (320 -> 400).
     "intervaloMs"   INTERVALO de leitura da tela. 200 a 10000.
     "latenciaMs"    DELAY: teto do tempo gasto MOVENDO O MOUSE até a casa. 0 a 60000.
