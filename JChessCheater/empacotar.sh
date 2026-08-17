@@ -26,11 +26,18 @@ fi
 echo "compilando..."
 rm -rf build/classes dist
 mkdir -p build/classes dist
-"$JAVAC_BIN" -encoding UTF-8 -d build/classes -cp "$MOTOR" $(find src -name '*.java')
+# O lançador PRIMEIRO, e para Java 8 de propósito: é ele que consegue carregar numa JVM
+# antiga e dizer "precisa do Java 21" em vez de deixar estourar UnsupportedClassVersionError.
+# Primeiro porque o diagnóstico testa a leitura de versão dele.
+"$JAVAC_BIN" -encoding UTF-8 --release 8 -nowarn -d build/classes \
+             $(find src-launcher -name '*.java')
+
+"$JAVAC_BIN" -encoding UTF-8 -d build/classes -cp "$MOTOR:build/classes" \
+             $(find src -name '*.java')
 
 echo "empacotando..."
 cat > build/manifesto.txt <<MANIFESTO
-Main-Class: chesscheater.JChessCheater
+Main-Class: chesscheater.Iniciar
 Class-Path: jchessai.jar
 Implementation-Title: JChessCheater
 Implementation-Version: 1.0.0
@@ -41,6 +48,7 @@ MANIFESTO
 cp "$MOTOR" dist/jchessai.jar
 cp pacote/jchesscheater.json dist/
 cp pacote/LEIAME.txt dist/
+cp pacote/JChessCheater.bat dist/
 
 # Os pesos são opcionais no pacote: 65 MB nem sempre se quer carregar junto. Se houver um por
 # perto, entra — é o que faz a pasta funcionar sem mais nada.

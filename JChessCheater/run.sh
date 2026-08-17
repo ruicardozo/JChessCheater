@@ -16,10 +16,13 @@ if [ ! -f lib/jchessai.jar ]; then
 fi
 
 # Recompila se algum fonte estiver mais novo que o bin.
-if [ ! -d bin ] || [ -n "$(find src -name '*.java' -newer bin 2>/dev/null | head -1)" ]; then
+if [ ! -d bin ] || [ -n "$(find src src-launcher -name '*.java' -newer bin 2>/dev/null | head -1)" ]; then
   echo "compilando..."
   mkdir -p bin
-  "$JAVAC_BIN" -encoding UTF-8 -d bin -cp lib/jchessai.jar $(find src -name '*.java')
+  # Em desenvolvimento o lançador é compilado junto, na versão corrente. Quem o compila para
+  # Java 8 — que é o ponto dele — é o empacotar.sh, e é o JAR do pacote que importa.
+  "$JAVAC_BIN" -encoding UTF-8 -d bin -cp lib/jchessai.jar \
+               $(find src src-launcher -name '*.java')
   touch bin
 fi
 

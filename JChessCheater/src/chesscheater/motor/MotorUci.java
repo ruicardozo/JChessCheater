@@ -87,8 +87,11 @@ public final class MotorUci implements AutoCloseable
 
         // O mesmo java que roda este programa. O jchessai.jar é class file 65 (Java 21), e
         // este programa também usa as classes de xadrez de dentro dele — então se estamos
-        // rodando, o java corrente serve.
-        String java = Paths.get(System.getProperty("java.home"), "bin", "java").toString();
+        // rodando, o java corrente serve. O ".exe" é explícito: o Windows o acrescentaria
+        // sozinho, mas depender disso é confiar num detalhe do CreateProcess sem precisar.
+        boolean windows = System.getProperty("os.name", "").toLowerCase().contains("win");
+        String java = Paths.get(System.getProperty("java.home"), "bin",
+                                windows ? "java.exe" : "java").toString();
 
         ProcessBuilder pb = new ProcessBuilder(java, "-jar", jar.toString(),
                                                "--weights", pesos.toString());

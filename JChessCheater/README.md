@@ -59,9 +59,22 @@ dist/
   jchesscheater.jar    o programa (Main-Class e Class-Path no manifesto)
   jchessai.jar         o motor e as regras
   jchesscheater.json   O ARQUIVO QUE SE EDITA
+  JChessCheater.bat    atalho do Windows: procura um Java 21 antes de abrir
   LEIAME.txt           o essencial, para quem abrir a pasta daqui a um ano
   iter_0080.pt         os pesos — opcionais, ver abaixo
 ```
+
+### O Java antigo, que é a armadilha do Windows
+
+O JAR é *class file* 65: uma JVM 17 o recusa **antes** de executar uma linha nossa, e o usuário
+vê um `UnsupportedClassVersionError` com um número mágico. Duas defesas:
+
+- **`JChessCheater.bat`** procura um JDK 21 (`JAVA21`, `~/.jdks/temurin-21`, Adoptium, Java,
+  `JAVA_HOME`) e só cai no `java` do PATH se não achar nenhum;
+- **`chesscheater.Iniciar`**, a única classe compilada para **Java 8** (`src-launcher/`), é o
+  `Main-Class` do JAR. Como carrega em qualquer JVM, ela confere a versão e, se for antiga,
+  diz o que falta — em português, com o caminho da JVM que a executou. Só então chama o
+  programa de verdade, por reflexão, para a classe de 21 não ser carregada antes da hora.
 
 ```bash
 cd dist

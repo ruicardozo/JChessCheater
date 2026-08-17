@@ -32,11 +32,16 @@ if exist dist rmdir /s /q dist
 mkdir build\classes
 mkdir dist
 dir /s /b src\*.java > "%TEMP%\jcc_fontes.txt"
-"%JAVA21%\bin\javac.exe" -encoding UTF-8 -d build\classes -cp "%MOTOR%" @"%TEMP%\jcc_fontes.txt"
+REM O lancador PRIMEIRO, e para Java 8 de proposito (ver empacotar.sh).
+dir /s /b src-launcher\*.java > "%TEMP%\jcc_launcher.txt"
+"%JAVA21%\bin\javac.exe" -encoding UTF-8 --release 8 -nowarn -d build\classes @"%TEMP%\jcc_launcher.txt"
+if errorlevel 1 exit /b 1
+
+"%JAVA21%\bin\javac.exe" -encoding UTF-8 -d build\classes -cp "%MOTOR%;build\classes" @"%TEMP%\jcc_fontes.txt"
 if errorlevel 1 exit /b 1
 
 echo empacotando...
-> build\manifesto.txt echo Main-Class: chesscheater.JChessCheater
+> build\manifesto.txt echo Main-Class: chesscheater.Iniciar
 >> build\manifesto.txt echo Class-Path: jchessai.jar
 >> build\manifesto.txt echo Implementation-Title: JChessCheater
 >> build\manifesto.txt echo Implementation-Version: 1.0.0
@@ -47,6 +52,7 @@ if errorlevel 1 exit /b 1
 copy /y "%MOTOR%" dist\jchessai.jar >nul
 copy /y pacote\jchesscheater.json dist\ >nul
 copy /y pacote\LEIAME.txt dist\ >nul
+copy /y pacote\JChessCheater.bat dist\ >nul
 
 REM Os pesos sao opcionais: 65 MB nem sempre se quer carregar junto.
 for %%C in ("weights\iter_0080.pt" "..\JChessAI\weights\iter_0080.pt" "D:\Downloads\temp\iter_0080.pt") do (

@@ -6,15 +6,26 @@ Esta pasta é o pacote inteiro. Nada mais precisa ser instalado além do Java 21
     jchesscheater.jar    o programa
     jchessai.jar         o motor (rede + MCTS) e as regras de xadrez
     jchesscheater.json   O ARQUIVO QUE VOCÊ EDITA
+    JChessCheater.bat    atalho do Windows (procura um Java 21)
     iter_0080.pt         os pesos (pode não estar aqui; ver abaixo)
 
 
 COMO RODAR
 ----------
 
-    java -jar jchesscheater.jar
+Windows:  clique duas vezes no JChessCheater.bat
+Linux:    java -jar jchesscheater.jar
 
 Precisa ser um Java 21 ou mais novo. Para conferir:  java -version
+
+No Windows é comum ter um Java mais antigo no PATH e um 21 instalado a parte — por isso o
+.bat existe: ele procura o 21 em alguns lugares conhecidos. Se o seu estiver noutro lugar,
+defina JAVA21 antes de rodar:
+
+    set JAVA21=C:\caminho\do\jdk-21
+
+E se mesmo assim rodar com um Java antigo, o programa AVISA em português em vez de estourar
+um UnsupportedClassVersionError — mas continua sem funcionar; precisa mesmo do 21.
 
 Antes de soltar o robô numa máquina nova, rode o diagnóstico:
 

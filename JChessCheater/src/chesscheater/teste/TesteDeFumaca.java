@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import chesscheater.Iniciar;
 import chesscheater.config.Configuracao;
 import chesscheater.motor.MotorUci;
 import chesscheater.partida.Partida;
@@ -54,6 +55,7 @@ public final class TesteDeFumaca
         regras();
         arbitro();
         configuracao();
+        lancador();
         motor();
 
         System.out.printf("%n%d passaram, %d falharam%n", passou, falhou);
@@ -338,6 +340,36 @@ public final class TesteDeFumaca
                         .forEach(p -> p.toFile().delete());
             }
         }
+    }
+
+    /**
+     * O lançador: a classe que roda em Java 8 para poder reclamar de Java antigo.
+     *
+     * <p>O que se testa aqui é a leitura da versão, porque é a parte que pode estar errada —
+     * a JVM não deixa sobrescrever {@code java.specification.version} pela linha de comando,
+     * então não há como simular um Java 17 sem instalar um.
+     */
+    private static void lancador()
+    {
+        System.out.println("\n── lançador (compatível com Java 8) ──");
+        confere("lê \"1.8\" como 8", Iniciar.versaoDe("1.8") == 8,
+                String.valueOf(Iniciar.versaoDe("1.8")));
+        confere("lê \"17\" como 17", Iniciar.versaoDe("17") == 17,
+                String.valueOf(Iniciar.versaoDe("17")));
+        confere("lê \"21\" como 21", Iniciar.versaoDe("21") == 21,
+                String.valueOf(Iniciar.versaoDe("21")));
+        confere("lê \"21.0.8\" como 21", Iniciar.versaoDe("21.0.8") == 21,
+                String.valueOf(Iniciar.versaoDe("21.0.8")));
+        confere("versão ilegível vira 0 (e o programa tenta assim mesmo)",
+                Iniciar.versaoDe("") == 0 && Iniciar.versaoDe(null) == 0
+                && Iniciar.versaoDe("sei-la") == 0, "");
+
+        confere("Java 17 seria recusado", Iniciar.versaoDe("17") < Iniciar.minima(), "");
+        confere("Java 21 passa", Iniciar.versaoDe("21") >= Iniciar.minima(), "");
+        confere("a JVM atual passa no próprio critério",
+                Iniciar.versaoDe(System.getProperty("java.specification.version"))
+                    >= Iniciar.minima(),
+                System.getProperty("java.specification.version"));
     }
 
     private static void motor() throws Exception
